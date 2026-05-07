@@ -1,0 +1,50 @@
+{
+  "model_path": "models/ecg_window_classifier.joblib",
+  "n_train": 36,
+  "n_test": 12,
+  "labels": [
+    "BRADYCARDIA",
+    "IRREGULAR_RHYTHM",
+    "NORMAL",
+    "TACHYCARDIA"
+  ],
+  "classification_report": {
+    "BRADYCARDIA": {
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1-score": 1.0,
+      "support": 3.0
+    },
+    "IRREGULAR_RHYTHM": {
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1-score": 1.0,
+      "support": 3.0
+    },
+    "NORMAL": {
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1-score": 1.0,
+      "support": 3.0
+    },
+    "TACHYCARDIA": {
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1-score": 1.0,
+      "support": 3.0
+    },
+    "accuracy": 1.0,
+    "macro avg": {
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1-score": 1.0,
+      "support": 12.0
+    },
+    "weighted avg": {
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1-score": 1.0,
+      "support": 12.0
+    }
+  }
+}

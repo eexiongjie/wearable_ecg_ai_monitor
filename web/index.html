@@ -1,0 +1,97 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Wearable ECG AI Monitor</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 0; background: #f6f7fb; color: #1f2937; }
+    .wrap { max-width: 980px; margin: 32px auto; padding: 0 20px; }
+    .card { background: #fff; border-radius: 16px; padding: 24px; box-shadow: 0 8px 24px rgba(15,23,42,.08); margin-bottom: 20px; }
+    h1 { margin-top: 0; }
+    button { padding: 10px 16px; border: none; border-radius: 10px; background: #111827; color: white; cursor: pointer; }
+    input { padding: 10px; border: 1px solid #d1d5db; border-radius: 10px; }
+    pre { background: #0f172a; color: #e5e7eb; padding: 16px; border-radius: 12px; overflow-x: auto; }
+    .pill { display: inline-block; padding: 6px 10px; background: #eef2ff; border-radius: 999px; margin-right: 8px; }
+    .row { display: flex; gap: 12px; flex-wrap: wrap; align-items: center; }
+    canvas { width: 100%; height: 280px; border: 1px solid #e5e7eb; border-radius: 12px; background: white; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="card">
+      <h1>Wearable ECG AI Monitor</h1>
+      <p>单导联心电信号上传、自动预处理、R 峰检测、心律异常初筛与报告生成。</p>
+      <p><span class="pill">ECG</span><span class="pill">R Peak</span><span class="pill">HRV</span><span class="pill">FastAPI</span></p>
+    </div>
+
+    <div class="card">
+      <h2>1. 上传 CSV 分析</h2>
+      <p>CSV 至少包含 <code>time</code> 与 <code>ecg</code> 两列；如果没有 time 列，需要在 URL 参数中指定 fs。</p>
+      <div class="row">
+        <input id="file" type="file" accept=".csv" />
+        <button onclick="uploadCsv()">开始分析</button>
+        <button onclick="simulateAndAnalyze()">生成混合异常示例</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>2. 波形预览</h2>
+      <canvas id="chart" width="940" height="280"></canvas>
+    </div>
+
+    <div class="card">
+      <h2>3. 分析结果</h2>
+      <pre id="result">等待上传数据...</pre>
+    </div>
+  </div>
+
+<script>
+function drawSignal(samples) {
+  const canvas = document.getElementById('chart');
+  const ctx = canvas.getContext('2d');
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  if (!samples || samples.length === 0) return;
+  const maxN = Math.min(samples.length, 2500);
+  const step = Math.max(1, Math.floor(samples.length / maxN));
+  const data = [];
+  for (let i = 0; i < samples.length; i += step) data.push(samples[i]);
+  const min = Math.min(...data), max = Math.max(...data);
+  const pad = 20;
+  ctx.beginPath();
+  for (let i = 0; i < data.length; i++) {
+    const x = pad + i * (canvas.width - 2 * pad) / Math.max(1, data.length - 1);
+    const y = canvas.height - pad - (data[i] - min) / Math.max(1e-9, max - min) * (canvas.height - 2 * pad);
+    if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+  }
+  ctx.lineWidth = 1.5;
+  ctx.stroke();
+}
+
+async function uploadCsv() {
+  const file = document.getElementById('file').files[0];
+  if (!file) { alert('请先选择 CSV 文件'); return; }
+  const fd = new FormData();
+  fd.append('file', file);
+  const res = await fetch('/analyze-csv', { method: 'POST', body: fd });
+  const json = await res.json();
+  document.getElementById('result').textContent = JSON.stringify(json, null, 2);
+}
+
+async function simulateAndAnalyze() {
+  const sim = await fetch('/simulate', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({duration_s: 45, fs: 250, scenario: 'mixed', seed: 42})
+  }).then(r => r.json());
+  drawSignal(sim.samples);
+  const report = await fetch('/analyze', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({fs: sim.fs, samples: sim.samples})
+  }).then(r => r.json());
+  document.getElementById('result').textContent = JSON.stringify(report, null, 2);
+}
+</script>
+</body>
+</html>
